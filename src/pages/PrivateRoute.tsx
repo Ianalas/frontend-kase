@@ -8,7 +8,7 @@ interface PrivateRouteProps {
 }
 
 export const PrivateRoute = ({ requiredRole }: PrivateRouteProps) => {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
   
   if (loading) return <p>Carregando...</p>;
 

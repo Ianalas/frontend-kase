@@ -2,7 +2,6 @@ import { Header } from "@/components/header";
 import { Container } from "@/components/container";
 import { Outlet } from "react-router";
 import { Section } from "@/components/section";
-import { useAuth } from "@/contexts/Autetication";
 import ItemHeader from "@/interfaces/Header";
 import { Album, GraduationCap, History, Home, Package } from "lucide-react";
 import { useEffect, useState } from "react";

@@ -37,9 +37,9 @@ function simularAPI(pagina: number, limite: number): Promise<{ data: TipoAula[];
 
 export function Historico() {
   const [paginaAtual, setPaginaAtual] = useState(1);
-  const [dados, setDados] = useState<TipoAula[]>([]);
-  const [totalPaginas, setTotalPaginas] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [_dados, setDados] = useState<TipoAula[]>([]);
+  const [_totalPaginas, setTotalPaginas] = useState(1);
+  const [_loading, setLoading] = useState(false);
 
   const itensPorPagina = 10;
 

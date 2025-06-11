@@ -57,12 +57,11 @@ const arrayCompleto: PedidoType[] = [
 
 export function Produtos() {
   const itemsPerPage = 4;
-  const totalPaginas = Math.ceil(arrayCompleto.length / itemsPerPage);
   const itensPorPagina = 6;
 
   const [paginaAtual, setPaginaAtual] = useState(0);
-  const [dados, setDados] = useState<PedidoType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_dados, setDados] = useState<PedidoType[]>([]);
+  const [_loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {

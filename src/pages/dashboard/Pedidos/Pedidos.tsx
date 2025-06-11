@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/pagination";
 import { ListFilter, Search, X } from "lucide-react";
 import { TableRowOrder } from "./components/TableRowOrder";
-import { Link } from "react-router";
-
 interface PedidoType {
   nome: string;
   codigo: string;
@@ -57,12 +55,11 @@ const arrayCompleto: PedidoType[] = [
 
 export function Pedidos() {
   const itemsPerPage = 4;
-  const totalPaginas = Math.ceil(arrayCompleto.length / itemsPerPage);
   const itensPorPagina = 6;
 
   const [paginaAtual, setPaginaAtual] = useState(0);
-  const [dados, setDados] = useState<PedidoType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_dados, setDados] = useState<PedidoType[]>([]);
+  const [_loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);

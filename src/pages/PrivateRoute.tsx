@@ -8,11 +8,13 @@ interface PrivateRouteProps {
 }
 
 export const PrivateRoute = ({ requiredRole }: PrivateRouteProps) => {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
   
   if (loading) return <p>Carregando...</p>;
 
-  // if (!user) return <Navigate to="/auth/entrar" replace />;
+  if (!user) return <Navigate to="/auth/entrar" replace />;
+
+  console.log("sdasda", user.uid)
 
   if (requiredRole && !requiredRole.includes("admin")) {
     return <Navigate to="/unauthorized" replace />;

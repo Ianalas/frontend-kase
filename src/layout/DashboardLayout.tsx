@@ -5,13 +5,10 @@ import { Section } from "@/components/section";
 import ItemHeader from "@/interfaces/Header";
 import { Album, GraduationCap, History, Home, Package } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/Autetication";
 
 const DashboardLayout: React.FC = () => {
-  //const { user } = useAuth();
-
-  const user = {
-    role: ""
-  }
+  const { user } = useAuth();
 
   const [lista, setLista] = useState<ItemHeader[]>([
     { content: "Início", icon: <Home className="w-4 h-4" />, link: "/" },

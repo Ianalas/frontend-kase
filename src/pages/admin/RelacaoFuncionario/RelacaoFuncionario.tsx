@@ -1,64 +1,35 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { DataPicker } from "@/components/data_picker";
 import { DropDownMenu } from "@/components/dropdown_menu";
 import { Section } from "@/components/section";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+// Importe TableCell se ainda não estiver importado
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ListFilter, Plus, Search, X } from "lucide-react";
-import { Pagination } from "@/components/pagination";
 import { TableRowRelation } from "./components/TableRowRelation";
 import { FormNewFuncionario } from "./components/FormNewFuncionario";
-
-
-interface TipoAula {
-  data: string;
-  status: "Em aula" | "Finalizado" | "Pendente";
-  professor: string;
-  modalidade: string;
-}
-
-// Simula a "API"
-function simularAPI(pagina: number, limite: number): Promise<{ data: TipoAula[]; total: number }> {
-  const all: TipoAula[] = Array(25).fill(0).map((_, i) => ({
-    data: `20/${(i % 30) + 1}/2025`,
-    status: (["Em aula", "Finalizado", "Pendente"][i % 3]) as "Em aula" | "Finalizado" | "Pendente",
-    modalidade: ["Muay-Thai", "Jiu-Jitsu", "Boxe"][i % 3],
-    professor: ["Jalinrabei", "Ana Clara", "Murilo"][i % 3],
-  }));
-
-  const start = (pagina - 1) * limite;
-  const end = start + limite;
-
-  return new Promise((res) =>
-    setTimeout(() => {
-      res({ data: all.slice(start, end), total: all.length });
-    }, 500)
-  );
-}
-
+import {  UserContext } from "@/contexts/UserContext";
 
 export function RelacaoFuncionario() {
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const [_dados, setDados] = useState<TipoAula[]>([]);
-  const [_totalPaginas, setTotalPaginas] = useState(1);
-  const [_loading, setLoading] = useState(false);
+  const { funcionarioAll, getAllFuncionarios } = useContext(UserContext)!;
+
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  const itensPorPagina = 10;
+  useEffect(() => { // Removido 'async' diretamente do useEffect, pois o React desaconselha.
+    const fetchFuncionarios = async () => {
+      setLoading(true);
+      try {
+       await getAllFuncionarios();
+      } catch (e) {
+        console.error("Erro ao buscar funcionários:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    setLoading(true);
-
-    simularAPI(paginaAtual, itensPorPagina)
-      .then(({ data, total }) => {
-        setDados(data);
-        setTotalPaginas(Math.ceil(total / itensPorPagina));
-      })
-      .catch((e) => console.error("Erro ao buscar dados", e))
-      .finally(() => setLoading(false));
-  }, [paginaAtual]);
-
-
+    fetchFuncionarios();
+  }, []); // Adicionado getAllFuncionarios como dependência, embora seja estável do contexto.
 
   return (
     <Section className="w-3/4 min-h-full flex flex-col mb-24">
@@ -78,16 +49,10 @@ export function RelacaoFuncionario() {
             className="w-full"
           />
         </div>
-        <Button
-          variant="default"
-          className="flex justify-center items-center gap-2 max-w-full"
-        >
+        <Button variant="default" className="flex justify-center items-center gap-2 max-w-full">
           <Search className="w-4 h-4" /> Filtrar Resultados
         </Button>
-        <Button
-          variant="secondary"
-          className="flex justify-center items-center gap-2 max-w-full"
-        >
+        <Button variant="secondary" className="flex justify-center items-center gap-2 max-w-full">
           <X className="w-4 h-4" /> Remover Filtros
         </Button>
         <Button className="ml-auto cursor-pointer hover:bg-red-700" onClick={() => setShowForm(true)}>
@@ -101,35 +66,48 @@ export function RelacaoFuncionario() {
           <TableHeader className="bg-accent">
             <TableRow>
               <TableHead className="w-24"></TableHead>
-              <TableHead className="w-36"><p className="font-semibold text-gray-300">Data de Realização</p></TableHead>
-              <TableHead className="w-36"></TableHead>
-              <TableHead className="w-52"><p className="font-semibold text-gray-300 ml-2">Status</p></TableHead>
-              <TableHead className="w-48"><p className="font-semibold text-gray-300">Professor</p></TableHead>
+              <TableHead className="w-36">
+                <p className="font-semibold text-gray-300">Nome do Funcionário</p>
+              </TableHead>
+              <TableHead className="w-36" />
+              <TableHead className="w-52">
+                <p className="font-semibold text-gray-300 ml-2">Data de Nascimento</p>
+              </TableHead>
+              <TableHead className="w-12" />
+              <TableHead className="w-48">
+                <p className="font-semibold text-gray-300">CPF</p>
+              </TableHead>
               <TableHead className="w-80"></TableHead>
-              <TableHead><p className="font-semibold text-gray-300">Modalidade</p></TableHead>
+              <TableHead>
+                <p className="font-semibold text-gray-300">Cref</p>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="p-6">
-            <TableRowRelation key={34} />
-            <TableRowRelation key={33} />
-            <TableRowRelation key={32} />
-            <TableRowRelation key={31} />
+            {/* Renderização condicional para tratar estados de carregamento e dados */}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center">Carregando funcionários...</TableCell>
+              </TableRow>
+            ) : funcionarioAll && funcionarioAll.length > 0 ? (
+              funcionarioAll.map((el) => (
+                <TableRowRelation key={el.uid} {...el} />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center">Nenhum funcionário encontrado.</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
 
-      <Pagination
-        
-        pageIndex={paginaAtual - 1}
-        totalCount={52}
-        perPage={itensPorPagina}
-        onPageChange={(index) => setPaginaAtual(index + 1)}
-      />
-
       {showForm && (
-        <FormNewFuncionario onClose={() => setShowForm(false)} />
+        <FormNewFuncionario onClose={() => {
+          setShowForm(false);
+          getAllFuncionarios();
+        }} />
       )}
-
     </Section>
   );
 }

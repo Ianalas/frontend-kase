@@ -1,51 +1,45 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Search } from "lucide-react";
+// components/TableRowRelationAluno.tsx
+import { TableRow, TableCell } from "@/components/ui/table";
+import { AlunoDataResp } from "@/contexts/UserContext"; // Importe a interface
+import { ChevronRight } from "lucide-react"; // Exemplo de ícone
 
-export function TableRowRelation(){
+interface TableRowRelationAlunoProps {
+  aluno: AlunoDataResp;
+}
+
+export function TableRowRelation({ aluno }: TableRowRelationAlunoProps) {
+
+  const formatCpf = (cpf: string | undefined): string => {
+  if (!cpf) {
+    return 'CPF inválido'; 
+  }
+  
+  const cleanCpf = cpf.replace(/\D/g, '');
+
+  return cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+  const formattedDate = (date: string) => date
+    ? new Date(date).toLocaleDateString('pt-BR')
+    : 'Data inválida';
+
   return (
     <TableRow>
-      <TableCell >
-        <Dialog  /*open={/*isDetailsOpen} onOpenChange={setIsDetailsOpen}*/>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="max-w-8 ml-2" >
-              <Search className="h-3 w-3" />
-              <span className="sr-only">Detalhes do pedido</span>
-            </Button>
-          </DialogTrigger>
-          {/* <OrderDetails orderId={order.orderId} openStatus={isDetailsOpen} /> */}
-        </Dialog>
+      <TableCell className="w-24">
+        <ChevronRight className="w-5 h-5 text-gray-400" />
       </TableCell>
-      <TableCell className="font-normal">
-        Balajuquinha 1234
-      </TableCell>
-      <TableCell />
-
-      <TableCell className="font-normal text-center">
-        09 de junho de 2025
-      </TableCell>
-      <TableCell />
-
-      <TableCell className="font-normal">
-        088.xxx.xxx-32
-      </TableCell>
-      <TableCell className="font-normal text-center">
-        12 de janeiro de 2024
-      </TableCell>
-      <TableCell />
-      <TableCell className="font-normal">
-        Total helf
+      <TableCell className="w-36">{aluno.nome}</TableCell>
+      <TableCell className="w-24" />
+      <TableCell className="w-44 text-center">{formattedDate(aluno.inicio_plano)}</TableCell> {/* Usando inicio_plano como data de entrada */}
+      <TableCell className="w-24" />
+      <TableCell className="w-48">{formatCpf(aluno.cpf)}</TableCell>
+      <TableCell className="w-52 text-center">{formattedDate(aluno.data_nascimento?? new Date().toISOString())}</TableCell>
+      <TableCell className="w-32" />
+      <TableCell>
+        {aluno.plano
+          ? aluno.plano.charAt(0).toUpperCase() + aluno.plano.slice(1).toLowerCase()
+          : ''}
       </TableCell>
     </TableRow>
-
-      // <TableHead className="w-36"><p className="font-semibold text-gray-300">Nome completo</p></TableHead>
-      // <TableHead className="w-36"></TableHead>
-      // <TableHead className="w-52"><p className="font-semibold text-gray-300 ml-2">Data entrada</p></TableHead>
-      // <TableHead className="w-48"><p className="font-semibold text-gray-300">CPF</p></TableHead>
-      // <TableHead className="w-52"><p className="font-semibold text-gray-300 ml-2">Data de nascimento</p></TableHead>
-      // <TableHead className="w-80"></TableHead>
-      // <TableHead><p className="font-semibold text-gray-300">Plano</p></TableHead>
-
   );
 }

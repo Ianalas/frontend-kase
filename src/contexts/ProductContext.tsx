@@ -1,7 +1,7 @@
 import { apiProduct } from "@/lib/axiosProduct";
 import { createContext, ReactNode, useContext, useState, useCallback, useMemo } from "react";
 
-// --- Interfaces (Mantidas como estão, adicionando 'id' opcional a Product) ---
+// --- Interfaces (Mantidas como estão) ---
 export interface Product {
   id?: string; // Adicionei 'id' opcional, pois produtos geralmente têm um ID após serem salvos
   nome: string;
@@ -20,16 +20,16 @@ interface PaymentData {
 }
 
 export interface ProductContextType {
-  products: Product[] | null; 
+  products: Product[] | null;
   paymentData: PaymentData | null;
   loadingProducts: boolean;
-  loadingPayment: boolean; 
-  errorProducts: any | null; 
-  errorPayment: any | null; 
+  loadingPayment: boolean;
+  errorProducts: any | null;
+  errorPayment: any | null;
 
-  criarProduto: (product: Product) => Promise<Product>; 
-  listarProdutos: () => Promise<Product[]>; 
-  createPayment: (amount: number, description: string) => Promise<PaymentData>; 
+  criarProduto: (product: Product) => Promise<Product>;
+  listarProdutos: () => Promise<Product[]>;
+  createPayment: (idCodigo: string, alunoId: string, cpf: string) => Promise<PaymentData>;
 }
 
 interface ProductProviderProps {
@@ -61,14 +61,14 @@ export function ProductProvider({ children }: ProductProviderProps) {
     } finally {
       setLoadingProducts(false);
     }
-  }, []); 
+  }, []);
 
   const criarProduto = useCallback(async (product: Product): Promise<Product> => {
     setLoadingProducts(true);
     setErrorProducts(null);
     try {
       const response = await apiProduct.post<Product>("/produtos", product);
-      listarProdutos(); 
+      listarProdutos();
       return response.data;
     } catch (error: any) {
       console.error("Erro ao criar produto:", error);
@@ -77,14 +77,17 @@ export function ProductProvider({ children }: ProductProviderProps) {
     } finally {
       setLoadingProducts(false);
     }
-  }, [listarProdutos]); 
+  }, [listarProdutos]);
 
 
-  const createPayment = useCallback(async (amount: number, description: string): Promise<PaymentData> => {
+  const createPayment = useCallback(async (idCodigo: string, alunoId: string, cpf: string): Promise<PaymentData> => {
     setLoadingPayment(true);
     setErrorPayment(null);
     try {
-      const response = await apiProduct.post<PaymentData>("/payments", { amount, description });
+      const response = await apiProduct.post<PaymentData>("/venda/" + idCodigo, {
+        alunoId,
+        cpf,
+      });
       setPaymentData(response.data);
       return response.data;
     } catch (error: any) {

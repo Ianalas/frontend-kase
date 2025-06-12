@@ -1,67 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useContext } from "react";
 import { DataPicker } from "@/components/data_picker";
 import { DropDownMenu } from "@/components/dropdown_menu";
 import { Section } from "@/components/section";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ListFilter, Search, X } from "lucide-react";
-import { Pagination } from "@/components/pagination";
-import { TableRowHistoric } from "./components/TableRowHistoric";
+import { TableRowHistoric } from "./components/TableRowHistoric"; 
 
-interface TipoAula {
-  data: string;
-  status: "Em aula" | "Finalizado" | "Pendente";
-  professor: string;
-  modalidade: string;
-}
-
-// Simula a "API"
-function simularAPI(pagina: number, limite: number): Promise<{ data: TipoAula[]; total: number }> {
-  const all: TipoAula[] = Array(25).fill(0).map((_, i) => ({
-    data: `20/${(i % 30) + 1}/2025`,
-    status: (["Em aula", "Finalizado", "Pendente"][i % 3]) as "Em aula" | "Finalizado" | "Pendente",
-    modalidade: ["Muay-Thai", "Jiu-Jitsu", "Boxe"][i % 3],
-    professor: ["Jalinrabei", "Ana Clara", "Murilo"][i % 3],
-  }));
-
-  const start = (pagina - 1) * limite;
-  const end = start + limite;
-
-  return new Promise((res) =>
-    setTimeout(() => {
-      res({ data: all.slice(start, end), total: all.length });
-    }, 500)
-  );
-}
-
+import { PresencaAulaContext } from "@/contexts/PresencaAulaContext";
+import { AuthContext } from "@/contexts/Autetication"; // Seu AuthContext
 
 export function Historico() {
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const [_dados, setDados] = useState<TipoAula[]>([]);
-  const [_totalPaginas, setTotalPaginas] = useState(1);
-  const [_loading, setLoading] = useState(false);
-
-  const itensPorPagina = 10;
+  const { presencas, loading: presencasLoading, error, findPresencasByAlunoId } = useContext(PresencaAulaContext)!;
+  const { user, loading: authLoading } = useContext(AuthContext)!;
 
   useEffect(() => {
-    setLoading(true);
-
-    simularAPI(paginaAtual, itensPorPagina)
-      .then(({ data, total }) => {
-        setDados(data);
-        setTotalPaginas(Math.ceil(total / itensPorPagina));
-      })
-      .catch((e) => console.error("Erro ao buscar dados", e))
-      .finally(() => setLoading(false));
-  }, [paginaAtual]);
-
-
+   
+    if (!authLoading && user && user.uid) {
+      findPresencasByAlunoId(user.uid);
+    } else if (!authLoading && !user) {
+      console.warn("Usuário não autenticado. Não é possível buscar histórico de aulas.");
+    }
+    
+  }, [authLoading, user, findPresencasByAlunoId]); 
 
   return (
     <Section className="w-3/4 min-h-full flex flex-col mb-24">
-      <h1 className="text-left text-4xl md:text-5xl mb-4 font-sans">Histórico</h1>
+      <h1 className="text-left text-4xl md:text-5xl mb-4 font-sans">Histórico de Aulas</h1>
 
-      {/* Filtros */}
       <div className="flex max-2xl:w-[100%] 2xl:w-[70%] gap-3 mb-6">
         <div className="flex items-center gap-2 whitespace-nowrap min-w-0">
           Filtros <ListFilter className="w-4 h-4" />
@@ -71,7 +37,7 @@ export function Historico() {
         </div>
         <div className="min-w-0">
           <DropDownMenu
-            list={["Todas Modalidades", "teste 1", "teste 2", "teste 3"]}
+            list={["Todas Modalidades", "Muay-Thai", "Jiu-Jitsu", "Boxe"]}
             className="w-full"
           />
         </div>
@@ -103,22 +69,32 @@ export function Historico() {
             </TableRow>
           </TableHeader>
           <TableBody className="p-6">
-            <TableRowHistoric key={34} />
-            <TableRowHistoric key={33} />
-            <TableRowHistoric key={32} />
-            <TableRowHistoric key={31} />
+            {authLoading ? ( 
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">Verificando autenticação...</TableCell>
+              </TableRow>
+            ) : presencasLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">Carregando histórico de aulas...</TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-red-500 py-8">
+                  Erro ao carregar histórico: {error.message || "Erro desconhecido."}
+                </TableCell>
+              </TableRow>
+            ) : presencas.length > 0 ? ( 
+              presencas.map((presenca) => (
+                <TableRowHistoric key={presenca.id} presenca={presenca} />
+              ))
+            ) : ( 
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">Nenhuma presença de aula encontrada para este aluno.</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
-
-        <Pagination
-          
-          pageIndex={paginaAtual - 1}
-          totalCount={52}
-          perPage={itensPorPagina}
-          onPageChange={(index) => setPaginaAtual(index + 1)}
-        />
-
     </Section>
   );
 }

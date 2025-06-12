@@ -77,7 +77,7 @@ export function RelacaoFuncionario() {
               <TableHead className="w-48">
                 <p className="font-semibold text-gray-300">CPF</p>
               </TableHead>
-              <TableHead className="w-80"></TableHead>
+              <TableHead className="w-80">Função</TableHead>
               <TableHead>
                 <p className="font-semibold text-gray-300">Cref</p>
               </TableHead>

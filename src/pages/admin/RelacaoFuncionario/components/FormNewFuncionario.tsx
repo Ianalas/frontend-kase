@@ -274,7 +274,7 @@ export function FormNewFuncionario({ onClose }: FormProps) {
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Professor Interno">Professor Interno</SelectItem>
+                <SelectItem value="Professor">Professor Interno</SelectItem>
                 <SelectItem value="Professor estagiário">Professor estagiário</SelectItem>
                 <SelectItem value="Atendente">Atendente</SelectItem>
                 <SelectItem value="Bem-estar">Bem-estar</SelectItem>

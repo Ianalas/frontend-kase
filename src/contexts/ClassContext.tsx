@@ -89,7 +89,12 @@ export function ClassProvider({ children }: ClassProviderProps) {
     setError(null);
     try {
       console.log(data.nome)
-      const response = await apiUser.post<Aula>("/aula", data);
+      const response = await apiUser.post<Aula>("/aula", {
+        nome: data.nome,
+        modalidade: data.modalidade,
+        descricao: data.descricao,
+        horario: new Date(data.horario).toISOString(), 
+      });
       setAulas((prev) => [...prev, response.data]);
       setAulaSelecionada(response.data);
       return response.data;

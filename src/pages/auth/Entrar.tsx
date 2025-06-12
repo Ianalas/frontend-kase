@@ -26,7 +26,11 @@ export function Entrar() {
       const response = await loginUser(user.cpf, user.password);
       const tokenResult = await getIdTokenResult(response.user);
       const role = tokenResult.claims.role;
-      console.log(tokenResult.token);
+
+      console.log("RESPOSTA:", response);
+
+      //console.log(tokenResult.token);
+
 
       if (role === "admin") {
         navigate("/admin")

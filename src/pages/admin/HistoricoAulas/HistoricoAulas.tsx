@@ -67,7 +67,7 @@ export function HistoricoAulas() {
               </TableHead>
               <TableHead className="w-36"></TableHead>
               <TableHead className="w-52">
-                <p className="font-semibold text-gray-300 ml-2">Descrição</p>
+                <p className="font-semibold text-gray-300 ml-2">Status</p>
               </TableHead>
               <TableHead className="w-48">
                 <p className="font-semibold text-gray-300">Professor</p>

@@ -14,7 +14,7 @@ const formatCpf = (cpf: string | undefined): string => {
   return cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 };
 
-export function TableRowRelation({ nome, cpf, cref, uid, data_nascimento }: FuncionarioDataResp) {
+export function TableRowRelation({ nome, cpf, cref, uid, data_nascimento, cargo }: FuncionarioDataResp) {
  
   const formattedDate = data_nascimento
     ? new Date(data_nascimento).toLocaleDateString('pt-BR')
@@ -46,7 +46,9 @@ export function TableRowRelation({ nome, cpf, cref, uid, data_nascimento }: Func
         {formattedCpf}
       </TableCell>
 
-      <TableCell />
+      <TableCell className="font-normal">
+        {cargo}
+      </TableCell>
       <TableCell className="font-normal">
         {cref}
       </TableCell>

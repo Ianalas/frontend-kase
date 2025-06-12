@@ -1,33 +1,48 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 
+// 1. Definir a interface das props que o componente TableRowOrder espera
+interface TableRowOrderProps {
+  nome: string;
+  codigo: string;
+  data: string; // Ou 'dataCompra' para ser mais consistente com seu Product
+  valorPago: number; // Agora espera um number, como é passado do Produtos.tsx
+  urlImage?: string; // Opcional, para a imagem do produto
+}
 
-export function TableRowOrder(){
-  const num = 49.99;
+// 2. Receber as props no componente
+export function TableRowOrder({ nome, codigo, data, valorPago, urlImage }: TableRowOrderProps) {
+  // `num` e o Date fixo foram removidos, pois agora os valores vêm das props.
 
-  return(
-     <TableRow>
-      <TableCell >
-        <img src="https://images.tcdn.com.br/img/img_prod/996597/creatina_300g_pote_max_titanium_6940_1_27fd86d998d9077967d06165be82a759.png" alt="" className="w-20 h-20 rounded-md" />
+  return (
+    <TableRow>
+      <TableCell>
+        {/* Usar urlImage das props, com um fallback se não houver */}
+        <img
+          src={urlImage || "https://via.placeholder.com/150"} // Placeholder se urlImage for null/undefined
+          alt={nome} // Alt text para acessibilidade
+          className="w-20 h-20 rounded-md object-cover" // object-cover para garantir que a imagem preencha o espaço
+        />
       </TableCell>
       <TableCell className="font-normal">
-        Creatina Pura 300g - Max titanium
+        {nome} {/* Usar nome das props */}
       </TableCell>
-      <TableCell />
+      <TableCell /> {/* Esta célula está vazia, se não for usada, pode ser removida */}
       <TableCell className="font-normal">
-       12131243423432
+        {codigo} {/* Usar codigo das props */}
       </TableCell>
       <TableCell className="font-normal">
-        {new Date().toLocaleDateString("pt-BR")}
+        {/* Formatar a data. Se 'data' já vem formatada (ex: "DD/MM/YYYY"), use direto.
+            Se vem como string ISO (ex: "YYYY-MM-DD"), converta para Date antes de formatar. */}
+        {new Date(data).toLocaleDateString("pt-BR")} {/* Usar data das props */}
       </TableCell>
-      <TableCell />
+      <TableCell /> {/* Esta célula está vazia, se não for usada, pode ser removida */}
       <TableCell className="font-normal">
-        {num.toLocaleString("pt-BR", {
+
+        {valorPago.toLocaleString("pt-BR", {
           style: "currency",
-          currency: "BRL", 
-          }
-        )}
+          currency: "BRL",
+        })}
       </TableCell>
-
     </TableRow>
-  )
+  );
 }

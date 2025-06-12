@@ -9,27 +9,45 @@ import { ImagePlus, X } from "lucide-react";
 import { Select,SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InputPrice } from "./InputPrice";
 import { cn } from "@/lib/utils";
+import { useProduct, Product } from "@/contexts/ProductContext";
 
 interface FormProps {
   onClose: () => void;
 }
 
 export function FormNewProduct({ onClose }: FormProps) {
-  const [form, setForm] = useState({
+
+  const { criarProduto, loadingProducts, errorProducts } = useProduct();
+
+  const [form, setForm] = useState<Omit<Product, 'id'> & { categoria: string; imagePreview: string | null }>({
     nome: "",
-    image: "",
-    dataCompra: "",
+    foto: "",
     codigo: "",
-    preco: "",
-    categoria: ""
+    dataCompra: "",
+    valorPago: "", 
+    categoria: "", 
+    imagePreview: null, 
   });
 
+
+  const [_imageFile, setImageFile] = useState<File | null>(null);
+
   const filledFieldsCount = useMemo(() => {
-    return Object.values(form).filter((value) => value.trim() !== "").length;
+
+    const relevantFields = {
+      nome: form.nome,
+      foto: form.foto,
+      codigo: form.codigo,
+      dataCompra: form.dataCompra,
+      valorPago: form.valorPago,
+      categoria: form.categoria,
+    };
+    return Object.values(relevantFields).filter((value) => value !== "" && value !== null).length;
   }, [form]);
 
-  const totalFields = Object.keys(form).length;
-
+  const totalFields = Object.keys({
+    nome: "", foto: "", codigo: "", dataCompra: "", valorPago: "", categoria: ""
+  }).length;
   const progress = Math.round((filledFieldsCount / totalFields) * 100);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -39,11 +57,11 @@ export function FormNewProduct({ onClose }: FormProps) {
       const file = files[0];
       const imageUrl = URL.createObjectURL(file);
 
+      setImageFile(file); 
       setForm((prev) => ({
         ...prev,
-        image: imageUrl, // url para preview
-        // Se precisar guardar o file em si para upload, crie outro campo no estado
-        // file: file,
+        foto: imageUrl, 
+        imagePreview: imageUrl,
       }));
     } else {
       setForm((prev) => ({
@@ -53,13 +71,32 @@ export function FormNewProduct({ onClose }: FormProps) {
     }
   }
 
-
-
   function handleSelectChange(name: string, value: string) {
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+
+    const productToCreate: Omit<Product, 'id'> = {
+      nome: form.nome,
+      foto: form.foto, 
+      codigo: form.codigo,
+      dataCompra: form.dataCompra,
+      valorPago: form.valorPago,
+    };
+
+    try {
+      await criarProduto(productToCreate);
+      onClose(); 
+    } catch (error) {
+      console.error("Erro ao criar produto:", error);
+      
+      alert(`Erro ao criar produto: ${errorProducts?.message || 'Verifique o console para mais detalhes.'}`);
+    }
   }
 
   return (
@@ -74,71 +111,76 @@ export function FormNewProduct({ onClose }: FormProps) {
         <CardDescription className="text-center">Registre um novo produto</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-x-8 gap-y-2">
-          <Label>Nome do produto</Label>
-          <Input placeholder="Digite o nome do produto" name="nome" value={form.nome} onChange={handleChange} />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-x-8 gap-y-2 mb-4">
+            <Label>Nome do produto</Label>
+            <Input placeholder="Digite o nome do produto" name="nome" value={form.nome} onChange={handleChange} required />
+          </div>
 
-        <div className="grid gap-x-8 gap-y-2">
-          <Label htmlFor="imagem">Imagem do produto</Label>
+          <div className="grid gap-x-8 gap-y-2 mb-4">
+            <Label htmlFor="imagem">Imagem do produto</Label>
+            <label
+              htmlFor="imagem"
+              className={cn(
+                "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/40",
+                "rounded-xl py-8 text-muted-foreground cursor-pointer hover:bg-muted/40 transition-colors text-sm"
+              )}
+            >
+              {form.imagePreview ? (
+                <img src={form.imagePreview} alt="Preview" className="max-h-32 object-contain" />
+              ) : (
+                <ImagePlus className="w-8 h-8 text-muted-foreground" />
+              )}
+              <Input
+                id="imagem"
+                type="file"
+                accept="image/*"
+                name="imagem"
+                onChange={handleChange}
+                className="border-none mx-auto text-center w-fit block p-0"
+              />
+            </label>
+          </div>
 
-          <label
-            htmlFor="imagem"
-            className={cn(
-              "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/40",
-              "rounded-xl py-8 text-muted-foreground cursor-pointer hover:bg-muted/40 transition-colors text-sm"
-            )}
-          >
-            <ImagePlus className="w-8 h-8 text-muted-foreground" />
-            
-            <Input
-              id="imagem"
-              type="file"
-              accept="image/*"
-              name="imagem"
-              onChange={handleChange} 
-              className="border-none mx-auto text-center w-fit block p-0"
-            />
-          </label>
-        </div>
+          <h1 className="text-2xl">Detalhes</h1>
+          <Separator />
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6 mb-4">
+            <Label>Código do produto</Label>
+            <Label>Data de compra</Label>
+
+            <Input type="text" placeholder="Digite o código do produto" name="codigo" value={form.codigo} onChange={handleChange} required />
+            <Input type="date" placeholder="Selecione a data de compra" name="dataCompra" value={form.dataCompra} onChange={handleChange} required />
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6 mb-8">
+            <Label>Preço de venda do produto</Label>
+            <Label>Categoria do produto</Label>
+
+            <InputPrice name="valorPago" value={form.valorPago} onChange={(e) => handleChange(e as React.ChangeEvent<HTMLInputElement>)} />
+            <Select value={form.categoria} onValueChange={(value) => handleSelectChange("categoria", value)} required>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Suplementos">Suplementos</SelectItem>
+                <SelectItem value="Bebidas">Bebidas</SelectItem>
+                <SelectItem value="Equipamentos">Equipamentos</SelectItem>
+                <SelectItem value="Vestuários">Vestuários</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
 
-        <h1 className="text-2xl">Detalhes</h1>
-        <Separator />
-
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6">
-          <Label>Código do produto</Label>
-          <Label>Data de compra</Label>
-          
-          <Input type="text" placeholder="Digite o código do produto" name="codigo" value={form.codigo} onChange={handleChange} />
-          <Input type="date" placeholder="Selecione a data de compra" name="dataCompra" value={form.dataCompra} onChange={handleChange} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6">
-          <Label>Preço de venda do produto</Label>
-          <Label>Categoria do produto</Label>
-          
-          <InputPrice name="preco" value={form.preco} onChange={handleChange} />
-          <Select value={form.categoria} onValueChange={(value) => handleSelectChange("categoria", value)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione a escolaridade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Suplementos">Suplementos</SelectItem>
-              <SelectItem value="Bebidas">Bebidas</SelectItem>
-              <SelectItem value="Equipamentos">Equipamentos</SelectItem>
-              <SelectItem value="Vestuários">Vestuários</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        
-        <div className="flex justify-end gap-2 mt-8">
-          <Button variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit">Salvar</Button>
-        </div>
+          <div className="flex justify-end gap-2 mt-8">
+            <Button variant="ghost" onClick={onClose} type="button"> 
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loadingProducts}>
+              {loadingProducts ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 
 import { Section } from "@/components/section";
 
-import { YourHistoric } from "./components/YourHistoric";
+//import { YourHistoric } from "./components/YourHistoric";
 import { YourPlan } from "./components/Yourplan";
 import { YourFrequency } from "./components/YourFrequency";
 import { useEffect, useState } from "react";
@@ -33,13 +33,6 @@ export function Inicio() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-
-  const data = [
-    { horario: "19:20", data: "10/11/2025", modalidade: "Funcional" },
-    { horario: "13:00", data: "11/10/2025", modalidade: "Muay-Thai" },
-    { horario: "13:00", data: "11/10/2025", modalidade: "Muay-Thai" },
-  ];
-
   return (
     <Section className="w-full h-fit flex flex-col pb-12 gap-14 lg:p-7 xl:p-12  2xl:p-20 ">
 
@@ -50,7 +43,7 @@ export function Inicio() {
       </div>
 
       <div className="flex max-h-[440px] justify-between">
-        <YourHistoric data={data} />
+        {/* <YourHistoric data={data} /> */}
       
         <Link to="/buy-product" >
           <Button className="w-84 h-32 text-2xl">
@@ -59,8 +52,6 @@ export function Inicio() {
         </Link>
       </div>
 
-
-     
     </Section>
   );
 }

@@ -4,8 +4,6 @@ import {
   Html5QrcodeSupportedFormats,
   Html5QrcodeScannerState,
 } from "html5-qrcode";
-
-// Componentes do Shadcn/UI
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Barcode, CameraOff, MoveHorizontal } from "lucide-react";
@@ -16,21 +14,15 @@ export const QrScanner = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Adiciona um estado para forçar a remontagem do scanner div
-  const [scannerKey, setScannerKey] = useState(0); 
 
   const cleanupScanner = async () => {
-    if (scannerRef.current) {
-      // Verifica o estado atual do scanner antes de tentar parar
-      if (scannerRef.current.getState() === Html5QrcodeScannerState.SCANNING || 
-          scannerRef.current.getState() === Html5QrcodeScannerState.PAUSED) {
-        try {
-          await scannerRef.current.stop();
-        } catch (e) {
-          console.error("Falha ao parar o scanner.", e);
-        }
+    if (scannerRef.current?.getState() === Html5QrcodeScannerState.SCANNING) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current = null; // Limpa a referência após parar
+      } catch (e) {
+        console.error("Falha ao parar o scanner.", e);
       }
-      scannerRef.current = null; // Limpa a referência após parar
     }
   };
 
@@ -39,34 +31,26 @@ export const QrScanner = () => {
     cleanupScanner();
   };
 
-  const handleScanError = (_errorMessage: string) => {
-    // Intencionalmente ignorado para não poluir o console ou a UI com erros temporários
-  };
+  const handleScanError = (_errorMessage: string) => {/* Intencionalmente ignorado */};
+
 
   const startScanner = async () => {
-    // Passo 1: Limpa qualquer scanner existente e reseta os estados
     await cleanupScanner();
+    
     setScannedCode(null);
     setError(null);
-    // Incrementa a chave para forçar a remontagem do div do scanner
-    setScannerKey(prevKey => prevKey + 1);
-
-    // Damos um pequeno tempo para o React renderizar o novo div
-    // Isso pode ser ajustado ou substituído por uma abordagem baseada em callbacks se o DOM não for atualizado rápido o suficiente
-    await new Promise(resolve => setTimeout(resolve, 50)); 
     
-    // Passo 2: Cria uma instância TOTALMENTE NOVA do scanner.
     const newScanner = new Html5Qrcode(QR_READER_ID, { verbose: false });
     scannerRef.current = newScanner;
 
     const config = {
       fps: 10,
       qrbox: { width: 360, height: 250 },
-      supportedScanTypes: [], // Deixa vazio para detectar automaticamente
+      supportedScanTypes: [],
       formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13],
     };
 
-    // Passo 3: Inicia a nova instância.
+    
     try {
       await newScanner.start(
         { facingMode: "environment" },
@@ -75,24 +59,21 @@ export const QrScanner = () => {
         handleScanError
       );
     } catch (err: any) {
-      setError("Não foi possível acessar a câmera. Verifique se outra aplicação a está usando ou se deu permissão.");
-      cleanupScanner(); // Limpa se houver erro ao iniciar
+      setError("Não foi possível acessar a câmera. Verifique se outra aplicação a está usando e recarregue a página.");
     }
   };
 
   useEffect(() => {
-    startScanner(); // Inicia na primeira vez
+    startScanner();
 
     return () => {
-      // Garante a limpeza quando o componente é desmontado
       cleanupScanner();
     };
-  }, [scannerKey]); // Dependência adicionada para reiniciar o scanner quando a chave muda
+  }, []);
 
   return (
     <div className="w-full max-w-md mx-auto p-4 text-center">
       {scannedCode ? (
-        // --- TELA DE RESULTADO ---
         <div className="flex flex-col items-center gap-4">
           <Alert>
             <Barcode className="h-4 w-4" />
@@ -106,12 +87,10 @@ export const QrScanner = () => {
           </Button>
         </div>
       ) : (
-        // --- TELA DO SCANNER ---
         <>
           <p className="mb-2 text-muted-foreground">Aponte a câmera para o código de barras</p>
           <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-black">
-            {/* Adiciona a key para forçar a remontagem do div */}
-            <div key={scannerKey} id={QR_READER_ID} className="w-full h-full" /> 
+            <div id={QR_READER_ID} className="w-full h-full" />
             {!error && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none">
                 <div className="w-72 h-40 border-4 border-primary/50 rounded-lg shadow-2xl" />

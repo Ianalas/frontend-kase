@@ -1,73 +1,42 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import {
-  Html5Qrcode,
-  Html5QrcodeSupportedFormats,
-  Html5QrcodeResult
+  Html5QrcodeScanner,
+  Html5QrcodeSupportedFormats
 } from "html5-qrcode";
 
 export const QrScanner = () => {
-  const [loading, setLoading] = useState(true);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const isRunningRef = useRef(false);
-  const hasScannedRef = useRef(false);
-
   useEffect(() => {
-    const scanner = new Html5Qrcode("reader");
-    scannerRef.current = scanner;
-
-    const onScanSuccess = async (
-      decodedText: string,
-      decodedResult: Html5QrcodeResult
-    ) => {
-      const format = decodedResult.result.format?.format;
-
-      if (format !== Html5QrcodeSupportedFormats.EAN_13) {
-        console.warn("Formato não suportado:", format);
-        return;
-      }
-
-      if (hasScannedRef.current || !isRunningRef.current) return;
-      hasScannedRef.current = true;
-
-      console.log("📦 Código EAN-13 detectado:", decodedText);
-
-      await scanner.stop();
-      isRunningRef.current = false;
+    const config = {
+      fps: 10,
+      qrbox: { width: 350, height: 450 },
+      rememberLastUsedCamera: true,
+      supportedScanTypes: [0], // 0 = camera (não arquivo)
+      formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
     };
 
-    scanner
-      .start(
-        { facingMode: "environment" }, // 1. cameraConfig
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 150 },
-          disableFlip: false
-        }, // 2. config
-        onScanSuccess, // 3. success callback
-        undefined // 4. failure callback
-      )
-      .then(() => {
-        isRunningRef.current = true;
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Erro ao iniciar o scanner:", err);
-        setLoading(false);
-      });
+    const scanner = new Html5QrcodeScanner("reader", config, false);
+
+    scanner.render(
+      (decodedText, decodedResult) => {
+        console.log("📦 Código detectado:", decodedText);
+        if (decodedText === "7891000397077") {
+          alert("EAN-13 reconhecido com sucesso: " + decodedText);
+          scanner.clear(); // para parar o scanner
+        }
+      },
+      (error) => {
+        // Falha ao escanear (ignorar)
+      }
+    );
 
     return () => {
-      if (scannerRef.current && isRunningRef.current) {
-        scannerRef.current.stop().catch(console.warn);
-      }
+      scanner.clear().catch(console.warn);
     };
   }, []);
 
   return (
     <div className="relative w-full h-full flex justify-center items-center">
       <div id="reader" className="w-full h-[80%]" />
-      {loading && (
-        <p className="absolute text-gray-500">Carregando câmera...</p>
-      )}
     </div>
   );
 };

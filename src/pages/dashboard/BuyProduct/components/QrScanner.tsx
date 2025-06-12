@@ -21,6 +21,7 @@ export const QrScanner = () => {
     if (scannerRef.current?.getState() === Html5QrcodeScannerState.SCANNING) {
       try {
         await scannerRef.current.stop();
+        scannerRef.current = null; // Limpa a referência após parar
       } catch (e) {
         console.error("Falha ao parar o scanner.", e);
       }
@@ -33,39 +34,47 @@ export const QrScanner = () => {
   };
 
   const handleScanError = (_errorMessage: string) => {
-    alert(_errorMessage)
+    // Intencionalmente ignorado
   };
 
-  const startScanner = () => {
-    if (!scannerRef.current) {
-      scannerRef.current = new Html5Qrcode(QR_READER_ID, { verbose: false });
-    }
-
+  // ***** A ALTERAÇÃO PRINCIPAL ESTÁ AQUI *****
+  const startScanner = async () => {
+    // Passo 1: Garante que qualquer scanner anterior seja totalmente parado e limpo.
+    await cleanupScanner();
+    
+    // Reseta os estados da UI
     setScannedCode(null);
     setError(null);
+    
+    // Passo 2: Cria uma instância TOTALMENTE NOVA do scanner.
+    const newScanner = new Html5Qrcode(QR_READER_ID, { verbose: false });
+    scannerRef.current = newScanner;
 
     const config = {
       fps: 10,
-      qrbox: { width: 300, height: 150 },
+      qrbox: { width: 360, height: 250 },
       supportedScanTypes: [],
       formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13],
     };
 
-    scannerRef.current
-      .start(
+    // Passo 3: Inicia a nova instância.
+    try {
+      await newScanner.start(
         { facingMode: "environment" },
         config,
         handleScanSuccess,
         handleScanError
-      )
-      .catch((_err) => {
-        setError("Não foi possível acessar a câmera. Verifique se outra aplicação a está usando e recarregue a página.");
-      });
+      );
+    } catch (err: any) {
+      setError("Não foi possível acessar a câmera. Verifique se outra aplicação a está usando e recarregue a página.");
+    }
   };
 
   useEffect(() => {
-    startScanner();
+    startScanner(); // Inicia na primeira vez
+
     return () => {
+      // Garante a limpeza quando o componente é desmontado
       cleanupScanner();
     };
   }, []);
@@ -92,16 +101,12 @@ export const QrScanner = () => {
           <p className="mb-2 text-muted-foreground">Aponte a câmera para o código de barras</p>
           <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-black">
             <div id={QR_READER_ID} className="w-full h-full" />
-            
-            {/* INÍCIO: Guia visual para o usuário */}
             {!error && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none">
-                  <div className="w-72 h-40 border-4 border-primary/50 rounded-lg shadow-2xl" />
-                  <MoveHorizontal className="text-primary/50 w-12 h-12 mt-4 animate-pulse" />
+                <div className="w-72 h-40 border-4 border-primary/50 rounded-lg shadow-2xl" />
+                <MoveHorizontal className="text-primary/50 w-12 h-12 mt-4 animate-pulse" />
               </div>
             )}
-            {/* FIM: Guia visual para o usuário */}
-            
             {error && (
               <div className="absolute inset-0 bg-background/90 flex flex-col justify-center items-center text-center p-4">
                 <CameraOff className="w-12 h-12 mb-4 text-destructive" />

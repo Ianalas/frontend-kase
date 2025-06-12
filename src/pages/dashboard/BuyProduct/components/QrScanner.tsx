@@ -5,12 +5,11 @@ import {
   Html5QrcodeScannerState,
 } from "html5-qrcode";
 
-// Componentes do Shadcn/UI (opcional, mas recomendado para a UI)
+// Componentes do Shadcn/UI
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Barcode, CameraOff } from "lucide-react";
+import { Barcode, CameraOff, MoveHorizontal } from "lucide-react";
 
-// O ID do elemento HTML onde o scanner será renderizado
 const QR_READER_ID = "barcode-reader";
 
 export const QrScanner = () => {
@@ -18,90 +17,68 @@ export const QrScanner = () => {
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para iniciar o scanner
+  const cleanupScanner = async () => {
+    if (scannerRef.current?.getState() === Html5QrcodeScannerState.SCANNING) {
+      try {
+        await scannerRef.current.stop();
+      } catch (e) {
+        console.error("Falha ao parar o scanner.", e);
+      }
+    }
+  };
+
+  const handleScanSuccess = (decodedText: string) => {
+    setScannedCode(decodedText);
+    cleanupScanner();
+  };
+
+  const handleScanError = (_errorMessage: string) => {
+    alert(_errorMessage)
+  };
+
   const startScanner = () => {
     if (!scannerRef.current) {
-      console.error("Scanner ref is not initialized.");
-      return;
+      scannerRef.current = new Html5Qrcode(QR_READER_ID, { verbose: false });
     }
-    // Limpa o estado anterior
+
     setScannedCode(null);
     setError(null);
 
-    // Configuração do Scanner
     const config = {
       fps: 10,
-      // Caixa de leitura otimizada para códigos de barra (mais larga que alta)
       qrbox: { width: 300, height: 150 },
-      // Formatos suportados - FOCO TOTAL EM EAN_13
+      supportedScanTypes: [],
       formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13],
     };
 
-    // Callback de sucesso
-    const onScanSuccess = (decodedText: string) => {
-      // Para o scanner e atualiza o estado com o código lido
-      stopScanner();
-      setScannedCode(decodedText);
-      console.log(`📦 Código EAN-13 detectado: ${decodedText}`);
-    };
-
-    // Callback de falha (ignorado para não poluir o console)
-    const onScanFailure = (errorMessage: string) => {
-        alert("deu erro" + errorMessage)
-    };
-
-    // Inicia o scanner
     scannerRef.current
       .start(
-        { facingMode: "environment" }, // Usa a câmera traseira
+        { facingMode: "environment" },
         config,
-        onScanSuccess,
-        onScanFailure
+        handleScanSuccess,
+        handleScanError
       )
-      .catch((err) => {
-        console.error("Erro ao iniciar o scanner:", err);
-        setError("Não foi possível iniciar a câmera. Verifique as permissões.");
+      .catch((_err) => {
+        setError("Não foi possível acessar a câmera. Verifique se outra aplicação a está usando e recarregue a página.");
       });
-  };
-  
-  // Função para parar o scanner
-  const stopScanner = () => {
-    if (
-      scannerRef.current &&
-      scannerRef.current.getState() === Html5QrcodeScannerState.SCANNING
-    ) {
-      scannerRef.current.stop().catch((err) => {
-        console.error("Falha ao parar o scanner.", err);
-      });
-    }
   };
 
-  // Hook para inicializar e limpar o scanner
   useEffect(() => {
-    // Inicializa a instância do scanner no primeiro render
-    if (!scannerRef.current) {
-      scannerRef.current = new Html5Qrcode(QR_READER_ID, {
-        verbose: false // Opcional: remove logs detalhados da biblioteca
-      });
-    }
-
     startScanner();
-
-    // Função de limpeza para parar o scanner quando o componente for desmontado
     return () => {
-      stopScanner();
+      cleanupScanner();
     };
   }, []);
 
   return (
-    <div className="w-full max-w-md mx-auto p-4">
+    <div className="w-full max-w-md mx-auto p-4 text-center">
       {scannedCode ? (
         // --- TELA DE RESULTADO ---
         <div className="flex flex-col items-center gap-4">
           <Alert>
             <Barcode className="h-4 w-4" />
             <AlertTitle>Código de Barras Lido!</AlertTitle>
-            <AlertDescription className="font-mono text-lg pt-2">
+            <AlertDescription className="font-mono text-lg pt-2 break-all">
               {scannedCode}
             </AlertDescription>
           </Alert>
@@ -111,15 +88,29 @@ export const QrScanner = () => {
         </div>
       ) : (
         // --- TELA DO SCANNER ---
-        <div className="relative w-full">
-          <div id={QR_READER_ID} className="w-full rounded-lg overflow-hidden" />
-          {error && (
-            <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-70 flex flex-col justify-center items-center text-white p-4">
-               <CameraOff className="w-12 h-12 mb-4" />
-               <p className="text-center font-semibold">{error}</p>
-            </div>
-          )}
-        </div>
+        <>
+          <p className="mb-2 text-muted-foreground">Aponte a câmera para o código de barras</p>
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-black">
+            <div id={QR_READER_ID} className="w-full h-full" />
+            
+            {/* INÍCIO: Guia visual para o usuário */}
+            {!error && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="w-72 h-40 border-4 border-primary/50 rounded-lg shadow-2xl" />
+                  <MoveHorizontal className="text-primary/50 w-12 h-12 mt-4 animate-pulse" />
+              </div>
+            )}
+            {/* FIM: Guia visual para o usuário */}
+            
+            {error && (
+              <div className="absolute inset-0 bg-background/90 flex flex-col justify-center items-center text-center p-4">
+                <CameraOff className="w-12 h-12 mb-4 text-destructive" />
+                <p className="font-semibold text-destructive">Erro de Câmera</p>
+                <p className="text-sm text-muted-foreground">{error}</p>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
